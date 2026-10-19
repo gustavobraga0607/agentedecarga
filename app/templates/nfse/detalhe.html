@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon, badge %}
+{% block titulo %}NF-S {{ nota.numero }}{% endblock %}
+{% block conteudo %}
+<a class="trilha" href="{{ url_for('nfse.lista') }}">{{ icon('voltar', 16) }} Notas fiscais</a>
+<div class="cab">
+  <div>
+    <h1>NF-S nº {{ nota.numero }} {{ badge(nota.status, 'status_nfse') }}</h1>
+    <p>{{ nota.cliente }} · {{ nota.origem|label('origem_nfse') }}</p>
+  </div>
+  <div class="acoes">
+    {% if nota.origem == 'interna' %}<a class="btn" href="{{ url_for('nfse.imprimir', nota_id=nota.id) }}" target="_blank">{{ icon('imprimir', 18) }} Imprimir</a>{% endif %}
+    {% if nota.arquivo_pdf %}<a class="btn" href="{{ url_arquivo(nota.arquivo_pdf) }}" target="_blank">{{ icon('baixar', 18) }} PDF</a>{% endif %}
+    {% if nota.arquivo_xml %}<a class="btn" href="{{ url_arquivo(nota.arquivo_xml) }}" download="{{ nota.arquivo_xml_nome }}">{{ icon('baixar', 18) }} XML</a>{% endif %}
+  </div>
+</div>
+{% if nota.status == 'cancelada' %}
+  <div class="flash erro">{{ icon('alerta', 18) }} Cancelada: {{ nota.motivo_cancelamento }}</div>
+{% endif %}
+<div class="grade-lateral">
+  <div>
+    <section class="painel">
+      <dl class="dados">
+        <div><dt>Número</dt><dd class="mono">{{ nota.numero }}</dd></div>
+        <div><dt>Código de verificação</dt><dd class="mono">{{ nota.codigo_verificacao or '—' }}</dd></div>
+        <div><dt>Emissão</dt><dd>{{ nota.data_emissao|data }}</dd></div>
+        <div><dt>Competência</dt><dd>{{ nota.competencia|data }}</dd></div>
+        <div><dt>Tomador</dt><dd>{{ nota.cliente }}</dd></div>
+        <div><dt>CNPJ/CPF</dt><dd class="mono">{{ nota.cliente_doc or '—' }}</dd></div>
+        <div><dt>Serviço (LC 116)</dt><dd>{{ nota.codigo_servico or '—' }}</dd></div>
+        <div><dt>Embarque</dt><dd>{% if nota.embarque_id %}<a href="{{ url_for('embarques.detalhe', emb_id=nota.embarque_id) }}">{{ nota.embarque_ref }}</a>{% else %}—{% endif %}</dd></div>
+      </dl>
+      {% if nota.discriminacao %}<p class="secao" style="margin-top:20px">Discriminação</p><div style="white-space:pre-line">{{ nota.discriminacao }}</div>{% endif %}
+    </section>
+    <section class="painel">
+      <h2>Valores</h2>
+      <table class="compacta" style="margin-top:10px">
+        <tbody>
+          <tr><td>Valor dos serviços</td><td class="right tnum">{{ nota.valor_servicos|brl }}</td></tr>
+          {% if nota.deducoes %}<tr><td>Deduções</td><td class="right tnum">{{ nota.deducoes|brl }}</td></tr>{% endif %}
+          <tr><td>Base de cálculo</td><td class="right tnum">{{ nota.base_calculo|brl }}</td></tr>
+          <tr><td>ISS ({{ nota.aliquota_iss|num }}%){% if nota.iss_retido %} — retido{% endif %}</td><td class="right tnum">{{ nota.valor_iss|brl }}</td></tr>
+          {% for rot, campo in [('PIS','valor_pis'),('COFINS','valor_cofins'),('CSLL','valor_csll'),('IR','valor_ir'),('INSS','valor_inss')] %}
+            {% if nota[campo] %}<tr><td>(−) {{ rot }} retido</td><td class="right tnum">{{ nota[campo]|brl }}</td></tr>{% endif %}
+          {% endfor %}
+        </tbody>
+        <tfoot><tr><td>Valor líquido</td><td class="right tnum">{{ nota.valor_liquido|brl }}</td></tr></tfoot>
+      </table>
+    </section>
+  </div>
+  <aside>
+    <section class="painel">
+      <h2>Arquivos da nota</h2>
+      <ul class="arquivos" style="margin:10px 0 14px">
+        <li>{{ icon('documento', 18) }}<span class="nome">{% if nota.arquivo_pdf %}<a href="{{ url_arquivo(nota.arquivo_pdf) }}" target="_blank">{{ nota.arquivo_pdf_nome }}</a>{% else %}<span class="muted">PDF não anexado</span>{% endif %}</span></li>
+        <li>{{ icon('documento', 18) }}<span class="nome">{% if nota.arquivo_xml %}<a href="{{ url_arquivo(nota.arquivo_xml) }}" download="{{ nota.arquivo_xml_nome }}">{{ nota.arquivo_xml_nome }}</a>{% else %}<span class="muted">XML não anexado</span>{% endif %}</span></li>
+      </ul>
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('nfse.substituir_arquivos', nota_id=nota.id) }}" class="campos">
+        <div class="c12"><label for="arquivo_pdf">PDF oficial</label><input id="arquivo_pdf" type="file" name="arquivo_pdf" accept=".pdf"></div>
+        <div class="c12"><label for="arquivo_xml">XML oficial</label><input id="arquivo_xml" type="file" name="arquivo_xml" accept=".xml"></div>
+        <div class="c12"><button class="btn" style="width:100%;justify-content:center">{{ icon('clipe', 18) }} Anexar / substituir</button></div>
+      </form>
+    </section>
+    {% if nota.status == 'emitida' %}
+    <section class="painel">
+      <details class="acao">
+        <summary class="btn-link perigo">{{ icon('fechar', 16) }} Cancelar nota</summary>
+        <form method="post" action="{{ url_for('nfse.cancelar', nota_id=nota.id) }}">
+          <label for="motivo">Motivo (mín. 15 caracteres)</label>
+          <textarea id="motivo" name="motivo" rows="3" minlength="15" required></textarea>
+          <button class="btn perigo" style="margin-top:10px">Confirmar cancelamento</button>
+        </form>
+      </details>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

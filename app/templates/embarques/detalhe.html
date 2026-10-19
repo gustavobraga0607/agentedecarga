@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon, icon_modal, badge %}
+{% block titulo %}{{ emb.referencia }}{% endblock %}
+{% block conteudo %}
+<a class="trilha" href="{{ url_for('embarques.lista') }}">{{ icon('voltar', 16) }} Embarques</a>
+<div class="cab">
+  <div>
+    <h1>{{ emb.referencia }} {{ badge(emb.status, 'status_embarque') }}</h1>
+    <p>{{ emb.cliente }} · {{ emb.origem }} → {{ emb.destino }}</p>
+  </div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('embarques.form', emb_id=emb.id) }}">{{ icon('editar', 18) }} Editar</a>
+    <a class="btn" href="{{ url_for('nfse.anexar', embarque_id=emb.id) }}">{{ icon('clipe', 18) }} Anexar NF-S</a>
+    <a class="btn primario" href="{{ url_for('nfse.emitir', embarque_id=emb.id) }}">{{ icon('recibo', 18) }} Emitir NF-S</a>
+  </div>
+</div>
+
+{% if emb.status != 'cancelado' %}
+{% set idx = etapas.index(emb.status) if emb.status in etapas else -1 %}
+<section class="painel">
+  <div class="etapas">
+    {% for s in etapas %}
+      <div class="etapa {{ 'feito' if loop.index0 <= idx }} {{ 'atual' if loop.index0 == idx }}">{{ STATUS[s] }}</div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<div class="grade-lateral" style="margin-top:20px">
+  <div>
+    <section class="painel">
+      <div class="painel-cab"><h2>{{ icon_modal(emb.modal, 20) }} {{ emb.modal|label('modal') }} · {{ emb.tipo_operacao|label('operacao') }}</h2>
+        {% if emb.orcamento_id %}<a href="{{ url_for('orcamentos.detalhe', orc_id=emb.orcamento_id) }}">Orçamento {{ emb.orcamento_numero }}</a>{% endif %}</div>
+      <dl class="dados">
+        <div><dt>Exportador</dt><dd>{{ emb.exportador or '—' }}</dd></div>
+        <div><dt>Importador</dt><dd>{{ emb.importador or '—' }}</dd></div>
+        <div><dt>Incoterm</dt><dd>{{ emb.incoterm or '—' }}</dd></div>
+        <div><dt>Valor do serviço</dt><dd class="tnum">{{ emb.valor_servico_brl|brl }}</dd></div>
+        <div><dt>Mercadoria</dt><dd>{{ emb.mercadoria or '—' }}</dd></div>
+        <div><dt>Volumes</dt><dd>{{ emb.volumes or '—' }}</dd></div>
+        <div><dt>Peso bruto</dt><dd class="tnum">{{ emb.peso_kg|num }} kg</dd></div>
+        <div><dt>Cubagem</dt><dd class="tnum">{{ emb.cubagem|num(3) }} m³</dd></div>
+      </dl>
+    </section>
+    <section class="painel">
+      <h2>Transporte</h2>
+      <dl class="dados" style="margin-top:14px">
+        <div><dt>Transportador</dt><dd>{{ emb.transportador or '—' }}</dd></div>
+        <div><dt>Navio / Voo</dt><dd>{{ emb.navio_voo or '—' }}</dd></div>
+        <div><dt>Booking</dt><dd class="mono">{{ emb.booking or '—' }}</dd></div>
+        <div><dt>Contêineres</dt><dd class="mono">{{ emb.containers or '—' }}</dd></div>
+        <div><dt>MBL / MAWB</dt><dd class="mono">{{ emb.master or '—' }}</dd></div>
+        <div><dt>HBL / HAWB</dt><dd class="mono">{{ emb.house or '—' }}</dd></div>
+        <div><dt>ETD / Embarque</dt><dd class="tnum">{{ emb.etd|data }} / {{ emb.atd|data }}</dd></div>
+        <div><dt>ETA / Chegada</dt><dd class="tnum">{{ emb.eta|data }} / {{ emb.ata|data }}</dd></div>
+      </dl>
+      {% if emb.observacoes %}<p class="muted" style="white-space:pre-line;margin-bottom:0">{{ emb.observacoes }}</p>{% endif %}
+    </section>
+
+    <section class="painel">
+      <div class="painel-cab"><h2>Documentos</h2></div>
+      <form method="post" enctype="multipart/form-data" action="{{ url_for('embarques.anexar_documento', emb_id=emb.id) }}" class="campos" style="margin-bottom:12px">
+        <div class="c4"><label for="tipo">Tipo</label><select id="tipo" name="tipo">{% for k, v in TIPOS_DOCUMENTO.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+        <div class="c6"><label for="arquivos">Arquivos</label><input id="arquivos" type="file" name="arquivos" multiple required></div>
+        <div class="c2" style="align-self:end"><button class="btn" style="width:100%">{{ icon('clipe', 18) }} Anexar</button></div>
+      </form>
+      <ul class="arquivos">
+        {% for d in documentos %}
+          <li>
+            <span class="badge b-tag">{{ d.tipo|label('tipo_documento') }}</span>
+            <a class="nome" href="{{ url_arquivo(d.arquivo) }}" target="_blank">{{ d.nome_original }}</a>
+            <span class="muted nowrap">{{ d.created_at|data }}</span>
+            <form class="inline" method="post" action="{{ url_for('embarques.excluir_documento', emb_id=emb.id, doc_id=d.id) }}" onsubmit="return confirm('Remover documento?')">
+              <button class="btn-link perigo" aria-label="Remover">{{ icon('lixo', 16) }}</button></form>
+          </li>
+        {% else %}
+          <li class="muted">Nenhum documento anexado.</li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="painel">
+      <div class="painel-cab"><h2>Notas fiscais de serviço</h2></div>
+      <ul class="arquivos">
+        {% for n in notas %}
+          <li>
+            {{ badge(n.status, 'status_nfse') }}
+            <a class="nome" href="{{ url_for('nfse.detalhe', nota_id=n.id) }}">NF-S nº {{ n.numero }} · {{ n.data_emissao|data }}</a>
+            <span class="tnum">{{ n.valor_servicos|brl }}</span>
+          </li>
+        {% else %}
+          <li class="muted">Nenhuma NF-S vinculada.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </div>
+
+  <aside>
+    <section class="painel">
+      <h2>Registrar evento</h2>
+      <form method="post" action="{{ url_for('embarques.novo_evento', emb_id=emb.id) }}" class="campos" style="margin-top:14px">
+        <div class="c12"><label for="ev-status">Novo status (opcional)</label>
+          <select id="ev-status" name="status"><option value="">— manter {{ STATUS[emb.status] }} —</option>
+            {% for k, v in STATUS.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+        <div class="c6"><label for="ev-data">Data</label><input id="ev-data" type="date" name="data" value="{{ hoje }}"></div>
+        <div class="c6"><label for="ev-local">Local</label><input id="ev-local" name="local"></div>
+        <div class="c12"><label for="ev-desc">Descrição</label><textarea id="ev-desc" name="descricao" rows="2" style="min-height:60px"></textarea></div>
+        <div class="c12"><button class="btn primario" style="width:100%;justify-content:center">Registrar</button></div>
+      </form>
+    </section>
+    <section class="painel">
+      <h2 style="margin-bottom:14px">Histórico</h2>
+      <ul class="timeline">
+        {% for ev in eventos %}
+          <li>
+            <div class="q"><strong>{{ STATUS.get(ev.status, 'Atualização') if ev.status else 'Atualização' }}</strong>
+              <form class="inline" method="post" action="{{ url_for('embarques.excluir_evento', emb_id=emb.id, evento_id=ev.id) }}"><button class="btn-link perigo" aria-label="Remover evento">{{ icon('fechar', 14) }}</button></form></div>
+            <small>{{ ev.data|data }}{% if ev.local %} · {{ ev.local }}{% endif %}</small>
+            {% if ev.descricao %}<div>{{ ev.descricao }}</div>{% endif %}
+          </li>
+        {% else %}
+          <li class="muted">Sem eventos.</li>
+        {% endfor %}
+      </ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% from "_icones.html" import icon %}<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proposta {{ orc.numero }}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="barra-impressao">
+  <a class="btn" href="{{ url_for('orcamentos.detalhe', orc_id=orc.id) }}">{{ icon('voltar', 18) }} Voltar</a>
+  <button class="btn primario" onclick="print()">{{ icon('imprimir', 18) }} Imprimir / PDF</button>
+</div>
+<div class="folha">
+  <div class="marca">
+    <div>
+      <div class="grande">{{ empresa.nome_fantasia or empresa.razao_social }}</div>
+      <div>{{ empresa.razao_social }}{% if empresa.cnpj %} · CNPJ {{ empresa.cnpj }}{% endif %}</div>
+      <div style="color:#475569">{{ empresa.endereco }} {{ empresa.municipio }}{% if empresa.uf %}/{{ empresa.uf }}{% endif %}</div>
+      <div style="color:#475569">{{ empresa.email }} {{ empresa.telefone }}</div>
+    </div>
+    <div style="text-align:right">
+      <h1>Proposta de frete</h1>
+      <div class="mono">{{ orc.numero }}</div>
+      <div>Emitida em {{ orc.created_at|data }}</div>
+      <div><strong>Válida até {{ orc.validade|data }}</strong></div>
+    </div>
+  </div>
+
+  <div class="bloco">
+    <h3>Cliente</h3>
+    <strong>{{ orc.cliente }}</strong>{% if orc.cliente_doc %} · {{ orc.cliente_doc }}{% endif %}
+  </div>
+
+  <div class="bloco">
+    <h3>Operação</h3>
+    <table style="width:100%">
+      <tr><td><strong>Modalidade</strong><br>{{ orc.modal|label('modal') }} — {{ orc.tipo_operacao|label('operacao') }}</td>
+          <td><strong>Origem</strong><br>{{ orc.origem }}</td><td><strong>Destino</strong><br>{{ orc.destino }}</td>
+          <td><strong>Incoterm</strong><br>{{ orc.incoterm }}</td></tr>
+      <tr><td><strong>Mercadoria</strong><br>{{ orc.mercadoria or '—' }}</td>
+          <td><strong>Peso bruto</strong><br>{{ res.carga.peso_bruto|num }} kg</td>
+          <td><strong>Cubagem</strong><br>{{ res.carga.cubagem|num(3) }} m³</td>
+          <td><strong>Peso taxável</strong><br>{{ res.carga.peso_taxavel|num }} kg</td></tr>
+      {% if orc.transit_time %}<tr><td colspan="4"><strong>Transit time estimado:</strong> {{ orc.transit_time }}</td></tr>{% endif %}
+    </table>
+  </div>
+
+  <div class="bloco">
+    <h3>Valores</h3>
+    <table style="width:100%">
+      <thead><tr><th style="text-align:left">Descrição</th><th style="text-align:right">Valor (R$)</th></tr></thead>
+      <tbody>
+        {% for i in res.itens %}<tr><td>{{ i.descricao }}</td><td style="text-align:right" class="tnum">{{ i.venda_brl|brl }}</td></tr>{% endfor %}
+      </tbody>
+      <tfoot><tr><td><strong>Total</strong></td><td style="text-align:right" class="tnum grande">{{ res.total_venda_brl|brl }}</td></tr></tfoot>
+    </table>
+    <p style="color:#475569;font-size:13px;margin:8px 0 0">
+      Valores convertidos pela taxa de câmbio de referência (USD {{ orc.taxa_usd|num(4) }}{% if orc.taxa_eur %} · EUR {{ orc.taxa_eur|num(4) }}{% endif %}).
+      Despesas em moeda estrangeira serão faturadas pelo câmbio do dia do pagamento. Não inclui impostos de importação, armazenagem extra ou demurrage, salvo indicação.
+    </p>
+  </div>
+
+  {% if orc.observacoes %}<div class="bloco"><h3>Observações</h3><div style="white-space:pre-line">{{ orc.observacoes }}</div></div>{% endif %}
+</div>
+</body>
+</html>

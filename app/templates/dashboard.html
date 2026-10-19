@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon, icon_modal, badge %}
+{% block titulo %}Painel{% endblock %}
+{% block conteudo %}
+<div class="cab boas-vindas">
+  <div>
+    <h1>Bem-vindo, {{ empresa.nome_fantasia or empresa.razao_social }}</h1>
+    <p>Agenciamento de cargas internacionais <span class="chip">{{ empresa.municipio or 'Configure sua empresa' }}{% if empresa.uf %}/{{ empresa.uf }}{% endif %}</span></p>
+  </div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('nfse.emitir') }}">{{ icon('recibo', 18) }} Emitir NF-S</a>
+    <a class="btn primario" href="{{ url_for('orcamentos.form') }}">{{ icon('mais', 18) }} Novo orçamento</a>
+  </div>
+</div>
+
+<div class="cards">
+  <a class="stat" href="{{ url_for('embarques.lista', status='ativos') }}">
+    {{ icon('navio', 28, 'azul') }}
+    <div><div class="valor">{{ ind.embarques_ativos }}</div><div class="rot">Embarques ativos</div></div>
+  </a>
+  <a class="stat" href="{{ url_for('orcamentos.lista') }}">
+    {{ icon('documento', 28, 'laranja') }}
+    <div><div class="valor">{{ ind.orcamentos_abertos }}</div><div class="rot">Orçamentos em aberto</div></div>
+  </a>
+  <a class="stat" href="{{ url_for('nfse.lista', mes=hoje[:7]) }}">
+    {{ icon('recibo', 28, 'violeta') }}
+    <div><div class="valor">{{ ind.nfse_mes_qtd }}</div><div class="rot">NF-S no mês</div></div>
+  </a>
+  <a class="stat" href="{{ url_for('nfse.lista', mes=hoje[:7]) }}">
+    {{ icon('pacote', 28, 'verde') }}
+    <div><div class="valor tnum">{{ ind.nfse_mes_valor|brl }}</div><div class="rot">Faturado no mês</div></div>
+  </a>
+</div>
+
+<div class="grade-2">
+  <section class="painel centro">
+    <h2>Chegadas nos próximos 7 dias</h2>
+    <a class="ver-todos" href="{{ url_for('embarques.lista', status='ativos') }}">Ver todos {{ icon('seta', 18) }}</a>
+    {% if chegadas %}
+      <ul class="lista-mini" style="margin-top:16px">
+        {% for e in chegadas %}
+          <li>
+            <div>
+              <a class="t" href="{{ url_for('embarques.detalhe', emb_id=e.id) }}">{{ e.referencia }}</a>
+              <small>{{ e.cliente }} · {{ e.origem }} → {{ e.destino }}</small>
+            </div>
+            <div class="right">
+              <div class="tnum {{ 'muted' if e.eta >= hoje }}" {% if e.eta < hoje %}style="color:var(--red)"{% endif %}>ETA {{ e.eta|data }}</div>
+              {{ badge(e.status, 'status_embarque') }}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="vazio">Nenhuma chegada prevista.</p>
+    {% endif %}
+  </section>
+
+  <section class="painel centro">
+    <h2>Embarques concluídos sem NF-S</h2>
+    <a class="ver-todos" href="{{ url_for('nfse.lista') }}">Ver notas {{ icon('seta', 18) }}</a>
+    {% if sem_nfse %}
+      <ul class="lista-mini" style="margin-top:16px">
+        {% for e in sem_nfse %}
+          <li>
+            <div>
+              <a class="t" href="{{ url_for('embarques.detalhe', emb_id=e.id) }}">{{ e.referencia }}</a>
+              <small>{{ e.cliente }} · {{ e.valor_servico_brl|brl }}</small>
+            </div>
+            <a class="btn pequeno" href="{{ url_for('nfse.emitir', embarque_id=e.id) }}">{{ icon('recibo', 16) }} Emitir</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="vazio">Tudo faturado.</p>
+    {% endif %}
+  </section>
+
+  <section class="painel centro" style="grid-column: 1 / -1">
+    <h2>Orçamentos recentes</h2>
+    <a class="ver-todos" href="{{ url_for('orcamentos.lista') }}">Ver todos {{ icon('seta', 18) }}</a>
+    {% if orcamentos %}
+      <ul class="lista-mini" style="margin-top:16px">
+        {% for o in orcamentos %}
+          <li>
+            <div style="display:flex;gap:12px;align-items:center">
+              <span class="muted">{{ icon_modal(o.modal, 20) }}</span>
+              <div>
+                <a class="t" href="{{ url_for('orcamentos.detalhe', orc_id=o.id) }}">{{ o.numero }}</a>
+                <small>{{ o.cliente }} · {{ o.origem }} → {{ o.destino }}</small>
+              </div>
+            </div>
+            <div class="right"><div class="tnum">{{ o.total_venda_brl|brl }}</div>{{ badge(o.status, 'status_orcamento') }}</div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="vazio">Nenhum orçamento ainda.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

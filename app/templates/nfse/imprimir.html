@@ -1,0 +1,55 @@
+{% from "_icones.html" import icon %}<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NF-S {{ nota.numero }}</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="barra-impressao">
+  <a class="btn" href="{{ url_for('nfse.detalhe', nota_id=nota.id) }}">{{ icon('voltar', 18) }} Voltar</a>
+  <button class="btn primario" onclick="print()">{{ icon('imprimir', 18) }} Imprimir / PDF</button>
+</div>
+<div class="folha">
+  <div class="marca">
+    <div>
+      <div class="grande">{{ empresa.razao_social }}</div>
+      <div>CNPJ {{ empresa.cnpj or '—' }} · IM {{ empresa.inscricao_municipal or '—' }}</div>
+      <div style="color:#475569">{{ empresa.endereco }} {{ empresa.municipio }}{% if empresa.uf %}/{{ empresa.uf }}{% endif %}</div>
+    </div>
+    <div style="text-align:right">
+      <h1>Nota Fiscal de Serviço</h1>
+      <div>Nº <strong class="grande">{{ nota.numero }}</strong> · Série {{ nota.serie_rps }}</div>
+      <div>Emissão {{ nota.data_emissao|data }} · Competência {{ nota.competencia|data }}</div>
+      <div class="mono">Verificação {{ nota.codigo_verificacao }}</div>
+      {% if nota.status == 'cancelada' %}<div class="cancelada" style="margin-top:8px">CANCELADA</div>{% endif %}
+    </div>
+  </div>
+  <div class="bloco">
+    <h3>Tomador do serviço</h3>
+    <strong>{{ nota.cliente }}</strong><br>
+    CNPJ/CPF {{ nota.cliente_doc or '—' }}{% if nota.cliente_im %} · IM {{ nota.cliente_im }}{% endif %}<br>
+    {{ nota.cliente_endereco }} {{ nota.cliente_cidade }}{% if nota.cliente_uf %}/{{ nota.cliente_uf }}{% endif %} {{ nota.cliente_email }}
+  </div>
+  <div class="bloco">
+    <h3>Discriminação dos serviços</h3>
+    <div style="white-space:pre-line;min-height:80px">{{ nota.discriminacao }}</div>
+    <div style="color:#475569;margin-top:8px">Item da lista de serviços (LC 116/03): {{ nota.codigo_servico }}</div>
+  </div>
+  <div class="bloco">
+    <h3>Valores</h3>
+    <table style="width:100%">
+      <tr><td>Valor dos serviços</td><td style="text-align:right">{{ nota.valor_servicos|brl }}</td>
+          <td>Base de cálculo</td><td style="text-align:right">{{ nota.base_calculo|brl }}</td></tr>
+      <tr><td>Alíquota ISS</td><td style="text-align:right">{{ nota.aliquota_iss|num }}%</td>
+          <td>Valor ISS{% if nota.iss_retido %} (retido){% endif %}</td><td style="text-align:right">{{ nota.valor_iss|brl }}</td></tr>
+      <tr><td>PIS / COFINS</td><td style="text-align:right">{{ nota.valor_pis|brl }} / {{ nota.valor_cofins|brl }}</td>
+          <td>CSLL / IR / INSS</td><td style="text-align:right">{{ nota.valor_csll|brl }} / {{ nota.valor_ir|brl }} / {{ nota.valor_inss|brl }}</td></tr>
+      <tr><td colspan="3"><strong>Valor líquido</strong></td><td style="text-align:right" class="grande">{{ nota.valor_liquido|brl }}</td></tr>
+    </table>
+  </div>
+  <p style="color:#64748b;font-size:12px;margin-top:16px">Documento gerado pelo sistema de gestão. A validade fiscal depende da autorização pelo município / Ambiente de Dados Nacional da NFS-e.</p>
+</div>
+</body>
+</html>

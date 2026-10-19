@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon %}
+{% block titulo %}Anexar NF-S{% endblock %}
+{% block conteudo %}
+<a class="trilha" href="{{ url_for('nfse.lista') }}">{{ icon('voltar', 16) }} Notas fiscais</a>
+<div class="cab"><div><h1>Anexar NF-S</h1><p>Registre uma nota emitida no portal da prefeitura ou no emissor nacional</p></div></div>
+<form method="post" enctype="multipart/form-data">
+  <section class="painel">
+    <p class="secao">Arquivos</p>
+    <div class="campos">
+      <div class="c6"><label for="arquivo_pdf">PDF da nota (DANFSe)</label><input id="arquivo_pdf" type="file" name="arquivo_pdf" accept=".pdf"></div>
+      <div class="c6"><label for="arquivo_xml">XML da nota</label><input id="arquivo_xml" type="file" name="arquivo_xml" accept=".xml"></div>
+    </div>
+    <p class="ajuda">Com o XML (Padrão Nacional ou ABRASF), número, valores, data e tomador são lidos automaticamente — os campos abaixo só são necessários sem XML ou para corrigir algo.</p>
+  </section>
+  <section class="painel">
+    <p class="secao">Dados da nota</p>
+    <div class="campos">
+      <div class="c6"><label for="cliente_id">Tomador</label>
+        <select id="cliente_id" name="cliente_id"><option value="">Identificar pelo XML…</option>
+          {% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if nota.cliente_id|string == c.id|string }}>{{ c.nome }}{% if c.cnpj_cpf %} — {{ c.cnpj_cpf }}{% endif %}</option>{% endfor %}
+        </select></div>
+      <div class="c6"><label for="embarque_id">Embarque vinculado</label>
+        <select id="embarque_id" name="embarque_id"><option value="">—</option>
+          {% for e in embarques %}<option value="{{ e.id }}" {{ 'selected' if nota.embarque_id|string == e.id|string }}>{{ e.referencia }} · {{ e.cliente }}</option>{% endfor %}
+        </select></div>
+      <div class="c3"><label for="numero">Número</label><input id="numero" name="numero" value="{{ nota.numero or '' }}"></div>
+      <div class="c3"><label for="codigo_verificacao">Código de verificação</label><input id="codigo_verificacao" name="codigo_verificacao" value="{{ nota.codigo_verificacao or '' }}"></div>
+      <div class="c3"><label for="data_emissao">Data de emissão</label><input id="data_emissao" type="date" name="data_emissao" value="{{ nota.data_emissao or '' }}"></div>
+      <div class="c3"><label for="competencia">Competência</label><input id="competencia" type="date" name="competencia" value="{{ nota.competencia or '' }}"></div>
+      <div class="c3"><label for="valor_servicos">Valor dos serviços (R$)</label><input id="valor_servicos" name="valor_servicos" type="number" step="0.01" value="{{ nota.valor_servicos or '' }}"></div>
+      <div class="c3"><label for="aliquota_iss">Alíquota ISS (%)</label><input id="aliquota_iss" name="aliquota_iss" type="number" step="0.01" value="{{ nota.aliquota_iss or '' }}"></div>
+      <div class="c3"><label for="valor_iss">Valor ISS (R$)</label><input id="valor_iss" name="valor_iss" type="number" step="0.01" value="{{ nota.valor_iss or '' }}"></div>
+      <div class="c3"><label for="valor_liquido">Valor líquido (R$)</label><input id="valor_liquido" name="valor_liquido" type="number" step="0.01" value="{{ nota.valor_liquido or '' }}"></div>
+      <div class="c12"><label for="discriminacao">Discriminação</label><textarea id="discriminacao" name="discriminacao" rows="3">{{ nota.discriminacao or '' }}</textarea></div>
+    </div>
+  </section>
+  <div class="form-acoes">
+    <a class="btn" href="{{ url_for('nfse.lista') }}">Cancelar</a>
+    <button class="btn primario">{{ icon('clipe', 18) }} Anexar nota</button>
+  </div>
+</form>
+{% endblock %}

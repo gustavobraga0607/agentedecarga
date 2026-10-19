@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon %}
+{% block titulo %}{{ 'Editar' if cliente and cliente.id else 'Novo' }} cliente{% endblock %}
+{% block conteudo %}
+{% set c = cliente or {} %}
+<a class="trilha" href="{{ url_for('clientes.lista') }}">{{ icon('voltar', 16) }} Clientes</a>
+<div class="cab"><div><h1>{{ c.nome or 'Novo cliente' }}</h1></div></div>
+<form method="post" class="painel">
+  <div class="campos">
+    <div class="c6"><label for="nome">Nome / Razão social *</label><input id="nome" name="nome" value="{{ c.nome or '' }}" required></div>
+    <div class="c3"><label for="cnpj_cpf">CNPJ / CPF</label><input id="cnpj_cpf" name="cnpj_cpf" value="{{ c.cnpj_cpf or '' }}"></div>
+    <div class="c3"><label for="inscricao_municipal">Inscrição municipal</label><input id="inscricao_municipal" name="inscricao_municipal" value="{{ c.inscricao_municipal or '' }}"></div>
+    <div class="c4"><label for="contato">Contato</label><input id="contato" name="contato" value="{{ c.contato or '' }}"></div>
+    <div class="c4"><label for="email">E-mail</label><input id="email" type="email" name="email" value="{{ c.email or '' }}"></div>
+    <div class="c4"><label for="telefone">Telefone</label><input id="telefone" name="telefone" value="{{ c.telefone or '' }}"></div>
+    <div class="c6"><label for="endereco">Endereço</label><input id="endereco" name="endereco" value="{{ c.endereco or '' }}"></div>
+    <div class="c2"><label for="cidade">Cidade</label><input id="cidade" name="cidade" value="{{ c.cidade or '' }}"></div>
+    <div class="c2"><label for="uf">UF</label><input id="uf" name="uf" maxlength="2" value="{{ c.uf or '' }}"></div>
+    <div class="c2"><label for="cep">CEP</label><input id="cep" name="cep" value="{{ c.cep or '' }}"></div>
+    <div class="c4"><label for="pais">País</label><input id="pais" name="pais" value="{{ c.pais or 'Brasil' }}"></div>
+  </div>
+  <div class="form-acoes">
+    <a class="btn" href="{{ url_for('clientes.lista') }}">Cancelar</a>
+    <button class="btn primario">Salvar cliente</button>
+  </div>
+</form>
+{% if c.id %}
+<form method="post" action="{{ url_for('clientes.excluir', cliente_id=c.id) }}" onsubmit="return confirm('Excluir este cliente?')" style="margin-top:16px">
+  <button class="btn-link perigo">{{ icon('lixo', 16) }} Excluir cliente</button>
+</form>
+{% endif %}
+{% endblock %}

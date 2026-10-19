@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon, badge %}
+{% block titulo %}Orçamentos{% endblock %}
+{% block conteudo %}
+<div class="cab">
+  <div><h1>Orçamentos</h1><p>Cotações de frete internacional para clientes</p></div>
+  <div class="acoes"><a class="btn primario" href="{{ url_for('orcamentos.form') }}">{{ icon('mais', 18) }} Novo orçamento</a></div>
+</div>
+<div class="barra filtros">
+  <a href="{{ url_for('orcamentos.lista') }}" class="{{ 'ativo' if not status }}">Todos</a>
+  {% for k, v in LABELS.status_orcamento.items() %}
+    <a href="{{ url_for('orcamentos.lista', status=k) }}" class="{{ 'ativo' if status == k }}">{{ v }}</a>
+  {% endfor %}
+</div>
+<div class="tabela-wrap">
+  <table>
+    <thead><tr><th>Código</th><th>Cliente</th><th>Status</th><th>Modalidade</th><th>Rota</th><th class="right">Peso taxável</th><th class="right">Total</th><th>Validade</th></tr></thead>
+    <tbody>
+      {% for o in orcamentos %}
+        <tr data-href="{{ url_for('orcamentos.detalhe', orc_id=o.id) }}">
+          <td class="mono nowrap">{{ o.numero }}</td>
+          <td>{{ o.cliente }}</td>
+          <td>{{ badge(o.status, 'status_orcamento') }}</td>
+          <td>{{ o.modal|label('modal') }}<div class="muted">{{ o.tipo_operacao|label('operacao') }} · {{ o.incoterm }}</div></td>
+          <td>{{ o.origem }} → {{ o.destino }}</td>
+          <td class="right tnum nowrap">{{ o.peso_taxavel|num }} kg</td>
+          <td class="right tnum nowrap"><strong>{{ o.total_venda_brl|brl }}</strong></td>
+          <td class="nowrap">{{ o.validade|data }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="vazio">Nenhum orçamento encontrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

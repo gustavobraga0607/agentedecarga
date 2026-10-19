@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon %}
+{% block titulo %}{{ 'Editar' if orc.numero else 'Novo' }} orçamento{% endblock %}
+{% block conteudo %}
+<a class="trilha" href="{{ url_for('orcamentos.lista') }}">{{ icon('voltar', 16) }} Orçamentos</a>
+<div class="cab"><div><h1>{{ orc.numero or 'Novo orçamento' }}</h1><p>Os totais são recalculados ao salvar</p></div></div>
+
+{% macro sel(nome, opcoes, atual) -%}
+<select id="{{ nome }}" name="{{ nome }}">
+  {% for k, v in opcoes.items() %}<option value="{{ k }}" {{ 'selected' if atual == k }}>{{ v }}</option>{% endfor %}
+</select>
+{%- endmacro %}
+
+<form method="post">
+  <section class="painel">
+    <p class="secao">Operação</p>
+    <div class="campos">
+      <div class="c6"><label for="cliente_id">Cliente *</label>
+        <select id="cliente_id" name="cliente_id" required>
+          <option value="">Selecione…</option>
+          {% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if orc.cliente_id|string == c.id|string }}>{{ c.nome }}</option>{% endfor %}
+        </select>
+        {% if not clientes %}<p class="ajuda">Cadastre um cliente primeiro: <a href="{{ url_for('clientes.form', voltar=request.path) }}">novo cliente</a></p>{% endif %}
+      </div>
+      <div class="c3"><label for="tipo_operacao">Operação</label>{{ sel('tipo_operacao', OPERACOES, orc.tipo_operacao) }}</div>
+      <div class="c3"><label for="modal">Modalidade</label>{{ sel('modal', MODAIS, orc.modal) }}</div>
+      <div class="c4"><label for="origem">Origem (porto/aeroporto/cidade)</label><input id="origem" name="origem" value="{{ orc.origem or '' }}" placeholder="Ex.: Shanghai, CN"></div>
+      <div class="c4"><label for="destino">Destino</label><input id="destino" name="destino" value="{{ orc.destino or '' }}" placeholder="Ex.: Santos, BR"></div>
+      <div class="c2"><label for="incoterm">Incoterm</label>
+        <select id="incoterm" name="incoterm">{% for i in INCOTERMS %}<option {{ 'selected' if orc.incoterm == i }}>{{ i }}</option>{% endfor %}</select></div>
+      <div class="c2"><label for="transit_time">Transit time</label><input id="transit_time" name="transit_time" value="{{ orc.transit_time or '' }}" placeholder="Ex.: 35 dias"></div>
+      <div class="c6"><label for="mercadoria">Mercadoria</label><input id="mercadoria" name="mercadoria" value="{{ orc.mercadoria or '' }}"></div>
+      <div class="c3"><label for="valor_mercadoria">Valor da mercadoria</label><input id="valor_mercadoria" name="valor_mercadoria" type="number" step="0.01" value="{{ orc.valor_mercadoria or '' }}"></div>
+      <div class="c3"><label for="moeda_mercadoria">Moeda</label>{{ sel('moeda_mercadoria', MOEDAS, orc.moeda_mercadoria) }}</div>
+    </div>
+  </section>
+
+  <section class="painel">
+    <div class="painel-cab"><p class="secao" style="margin:0">Volumes</p>
+      <button type="button" class="btn pequeno" data-add="volumes">{{ icon('mais', 16) }} Adicionar volume</button></div>
+    <div class="tabela-wrap" style="border:0;background:none">
+      <table class="linhas">
+        <thead><tr><th>Qtd</th><th>Compr. (cm)</th><th>Larg. (cm)</th><th>Alt. (cm)</th><th>Peso unit. (kg)</th><th></th></tr></thead>
+        <tbody id="volumes">
+          {% for v in volumes %}
+          <tr>
+            <td><input name="vol_quantidade[]" type="number" min="1" step="1" value="{{ v.quantidade }}"></td>
+            <td><input name="vol_comprimento_cm[]" type="number" step="0.1" value="{{ v.comprimento_cm }}"></td>
+            <td><input name="vol_largura_cm[]" type="number" step="0.1" value="{{ v.largura_cm }}"></td>
+            <td><input name="vol_altura_cm[]" type="number" step="0.1" value="{{ v.altura_cm }}"></td>
+            <td><input name="vol_peso_kg[]" type="number" step="0.01" value="{{ v.peso_kg }}"></td>
+            <td><button type="button" class="btn-link perigo" data-del aria-label="Remover">{{ icon('fechar', 18) }}</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="ajuda" id="resumo-carga"></p>
+  </section>
+
+  <section class="painel">
+    <div class="painel-cab"><p class="secao" style="margin:0">Taxas e fretes (custo)</p>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn pequeno" id="padrao">{{ icon('copiar', 16) }} Carregar taxas padrão do modal</button>
+        <button type="button" class="btn pequeno" data-add="itens">{{ icon('mais', 16) }} Adicionar taxa</button>
+      </div></div>
+    <div class="tabela-wrap" style="border:0;background:none">
+      <table class="linhas">
+        <thead><tr><th style="min-width:220px">Descrição</th><th>Cálculo</th><th>Moeda</th><th>Valor unit.</th><th>Qtd</th><th>Mínimo</th><th></th></tr></thead>
+        <tbody id="itens">
+          {% for i in itens %}
+          <tr>
+            <td><input name="item_descricao[]" value="{{ i.descricao }}"></td>
+            <td><select name="item_tipo_calculo[]">{% for k, v in LABELS.tipo_calculo.items() %}<option value="{{ k }}" {{ 'selected' if i.tipo_calculo == k }}>{{ v }}</option>{% endfor %}</select></td>
+            <td><select name="item_moeda[]">{% for m in MOEDAS %}<option {{ 'selected' if i.moeda == m }}>{{ m }}</option>{% endfor %}</select></td>
+            <td><input name="item_valor_unitario[]" type="number" step="0.0001" value="{{ i.valor_unitario }}"></td>
+            <td><input name="item_quantidade[]" type="number" step="1" min="1" value="{{ i.quantidade }}" style="width:80px"></td>
+            <td><input name="item_minimo[]" type="number" step="0.01" value="{{ i.minimo }}"></td>
+            <td><button type="button" class="btn-link perigo" data-del aria-label="Remover">{{ icon('fechar', 18) }}</button></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="ajuda">Mínimo e valor unitário na moeda da taxa. “Qtd” é usada no cálculo por unidade/contêiner. O percentual sobre mercadoria usa o valor informado acima.</p>
+  </section>
+
+  <section class="painel">
+    <p class="secao">Câmbio, margem e condições</p>
+    <div class="campos">
+      <div class="c2"><label for="taxa_usd">USD → BRL</label><input id="taxa_usd" name="taxa_usd" type="number" step="0.0001" value="{{ orc.taxa_usd }}"></div>
+      <div class="c2"><label for="taxa_eur">EUR → BRL</label><input id="taxa_eur" name="taxa_eur" type="number" step="0.0001" value="{{ orc.taxa_eur }}"></div>
+      <div class="c2"><label for="margem_pct">Margem (%)</label><input id="margem_pct" name="margem_pct" type="number" step="0.1" value="{{ orc.margem_pct }}"></div>
+      <div class="c2"><label for="validade">Validade</label><input id="validade" name="validade" type="date" value="{{ orc.validade or '' }}"></div>
+      <div class="c12"><label for="observacoes">Observações para o cliente</label><textarea id="observacoes" name="observacoes" rows="3">{{ orc.observacoes or '' }}</textarea></div>
+    </div>
+  </section>
+
+  <div class="form-acoes">
+    <a class="btn" href="{{ url_for('orcamentos.lista') }}">Cancelar</a>
+    <button class="btn primario">{{ icon('calculadora', 18) }} Salvar e calcular</button>
+  </div>
+</form>
+
+<template id="tpl-volumes">
+  <tr>
+    <td><input name="vol_quantidade[]" type="number" min="1" step="1" value="1"></td>
+    <td><input name="vol_comprimento_cm[]" type="number" step="0.1"></td>
+    <td><input name="vol_largura_cm[]" type="number" step="0.1"></td>
+    <td><input name="vol_altura_cm[]" type="number" step="0.1"></td>
+    <td><input name="vol_peso_kg[]" type="number" step="0.01"></td>
+    <td><button type="button" class="btn-link perigo" data-del aria-label="Remover">{{ icon('fechar', 18) }}</button></td>
+  </tr>
+</template>
+<template id="tpl-itens">
+  <tr>
+    <td><input name="item_descricao[]"></td>
+    <td><select name="item_tipo_calculo[]">{% for k, v in LABELS.tipo_calculo.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></td>
+    <td><select name="item_moeda[]">{% for m in MOEDAS %}<option>{{ m }}</option>{% endfor %}</select></td>
+    <td><input name="item_valor_unitario[]" type="number" step="0.0001"></td>
+    <td><input name="item_quantidade[]" type="number" step="1" min="1" value="1" style="width:80px"></td>
+    <td><input name="item_minimo[]" type="number" step="0.01" value="0"></td>
+    <td><button type="button" class="btn-link perigo" data-del aria-label="Remover">{{ icon('fechar', 18) }}</button></td>
+  </tr>
+</template>
+{% endblock %}
+{% block scripts %}
+<script>
+  var TAXAS = {{ TAXAS_PADRAO|tojson }};
+  var FATOR = {aereo: 1e6 / 6000, maritimo_lcl: 1000, maritimo_fcl: 1000, rodoviario: 300};
+  function adicionar(id) {
+    var tr = document.getElementById('tpl-' + id).content.firstElementChild.cloneNode(true);
+    document.getElementById(id).appendChild(tr);
+    return tr;
+  }
+  document.querySelectorAll('[data-add]').forEach(function (b) {
+    b.addEventListener('click', function () { adicionar(b.dataset.add); });
+  });
+  document.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-del]');
+    if (b) { b.closest('tr').remove(); resumo(); }
+  });
+  document.getElementById('padrao').addEventListener('click', function () {
+    var lista = TAXAS[document.getElementById('modal').value] || [];
+    var corpo = document.getElementById('itens');
+    if (corpo.children.length && !confirm('Substituir as taxas atuais pelas taxas padrão?')) return;
+    corpo.innerHTML = '';
+    lista.forEach(function (t) {
+      var tr = adicionar('itens');
+      var campos = tr.querySelectorAll('input, select');
+      [t[0], t[1], t[2], t[3], t[4], t[5]].forEach(function (v, i) { campos[i].value = v; });
+    });
+  });
+  function resumo() {
+    var peso = 0, cbm = 0;
+    document.querySelectorAll('#volumes tr').forEach(function (tr) {
+      var v = Array.prototype.map.call(tr.querySelectorAll('input'), function (i) { return parseFloat(i.value) || 0; });
+      peso += v[0] * v[4]; cbm += v[0] * v[1] * v[2] * v[3] / 1e6;
+    });
+    var cubado = cbm * (FATOR[document.getElementById('modal').value] || 1000);
+    var f = function (n, c) { return n.toLocaleString('pt-BR', {minimumFractionDigits: c, maximumFractionDigits: c}); };
+    document.getElementById('resumo-carga').textContent =
+      'Peso bruto ' + f(peso, 2) + ' kg · Cubagem ' + f(cbm, 3) + ' m³ · Peso cubado ' + f(cubado, 2) +
+      ' kg · Peso taxável ' + f(Math.max(peso, cubado), 2) + ' kg';
+  }
+  document.getElementById('volumes').addEventListener('input', resumo);
+  document.getElementById('modal').addEventListener('change', resumo);
+  resumo();
+</script>
+{% endblock %}

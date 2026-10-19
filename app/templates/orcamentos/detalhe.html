@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon, icon_modal, badge %}
+{% block titulo %}{{ orc.numero }}{% endblock %}
+{% block conteudo %}
+<a class="trilha" href="{{ url_for('orcamentos.lista') }}">{{ icon('voltar', 16) }} Orçamentos</a>
+<div class="cab">
+  <div>
+    <h1>{{ orc.numero }} {{ badge(orc.status, 'status_orcamento') }}</h1>
+    <p>{{ orc.cliente }} · {{ orc.origem }} → {{ orc.destino }}</p>
+  </div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('orcamentos.imprimir', orc_id=orc.id) }}" target="_blank">{{ icon('imprimir', 18) }} Proposta</a>
+    <form class="inline" method="post" action="{{ url_for('orcamentos.duplicar', orc_id=orc.id) }}"><button class="btn">{{ icon('copiar', 18) }} Duplicar</button></form>
+    <a class="btn" href="{{ url_for('orcamentos.form', orc_id=orc.id) }}">{{ icon('editar', 18) }} Editar</a>
+    {% if embarque %}
+      <a class="btn primario" href="{{ url_for('embarques.detalhe', emb_id=embarque.id) }}">{{ icon('navio', 18) }} {{ embarque.referencia }}</a>
+    {% else %}
+      <a class="btn primario" href="{{ url_for('embarques.form', orcamento_id=orc.id) }}">{{ icon('navio', 18) }} Gerar embarque</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grade-lateral">
+  <div>
+    <section class="painel">
+      <dl class="dados">
+        <div><dt>Operação</dt><dd>{{ orc.tipo_operacao|label('operacao') }}</dd></div>
+        <div><dt>Modalidade</dt><dd>{{ icon_modal(orc.modal, 16) }} {{ orc.modal|label('modal') }}</dd></div>
+        <div><dt>Incoterm</dt><dd>{{ orc.incoterm }}</dd></div>
+        <div><dt>Transit time</dt><dd>{{ orc.transit_time or '—' }}</dd></div>
+        <div><dt>Mercadoria</dt><dd>{{ orc.mercadoria or '—' }}</dd></div>
+        <div><dt>Valor mercadoria</dt><dd class="tnum">{{ orc.moeda_mercadoria }} {{ orc.valor_mercadoria|num }}</dd></div>
+        <div><dt>Câmbio</dt><dd class="tnum">USD {{ orc.taxa_usd|num(4) }} · EUR {{ orc.taxa_eur|num(4) }}</dd></div>
+        <div><dt>Validade</dt><dd>{{ orc.validade|data }}</dd></div>
+      </dl>
+    </section>
+
+    <section class="painel">
+      <div class="painel-cab"><h2>Carga</h2></div>
+      <dl class="dados">
+        <div><dt>Volumes</dt><dd>{{ volumes|sum(attribute='quantidade') }}</dd></div>
+        <div><dt>Peso bruto</dt><dd class="tnum">{{ res.carga.peso_bruto|num }} kg</dd></div>
+        <div><dt>Cubagem</dt><dd class="tnum">{{ res.carga.cubagem|num(3) }} m³</dd></div>
+        <div><dt>Peso taxável</dt><dd class="tnum"><strong>{{ res.carga.peso_taxavel|num }} kg</strong></dd></div>
+      </dl>
+    </section>
+
+    <section class="painel">
+      <div class="painel-cab"><h2>Composição</h2><span class="muted">margem {{ orc.margem_pct|num(1) }}%</span></div>
+      <div class="tabela-wrap">
+        <table class="compacta">
+          <thead><tr><th>Taxa</th><th>Cálculo</th><th class="right">Custo (moeda)</th><th class="right">Custo (R$)</th><th class="right">Venda (R$)</th></tr></thead>
+          <tbody>
+            {% for i in res.itens %}
+              <tr>
+                <td>{{ i.descricao }}</td>
+                <td class="muted">{{ i.tipo_calculo|label('tipo_calculo') }} · {{ i.valor_unitario|num(2) }}{% if i.minimo %} (mín. {{ i.minimo|num }}){% endif %}</td>
+                <td class="right tnum nowrap">{{ i.moeda }} {{ i.custo_moeda|num }}</td>
+                <td class="right tnum nowrap">{{ i.custo_brl|brl }}</td>
+                <td class="right tnum nowrap">{{ i.venda_brl|brl }}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="5" class="vazio">Nenhuma taxa informada.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="totais">
+        <div><small>Custo total</small><strong class="tnum">{{ res.total_custo_brl|brl }}</strong></div>
+        <div><small>Lucro bruto</small><strong class="tnum" style="color:var(--green)">{{ res.lucro_brl|brl }}</strong></div>
+        <div class="destaque"><small>Preço ao cliente</small><strong class="tnum">{{ res.total_venda_brl|brl }}</strong></div>
+      </div>
+    </section>
+  </div>
+
+  <aside>
+    <section class="painel">
+      <h2>Status</h2>
+      <form method="post" action="{{ url_for('orcamentos.alterar_status', orc_id=orc.id) }}" style="display:flex;gap:8px;margin-top:14px">
+        <select name="status" aria-label="Status">{% for k, v in STATUS.items() %}<option value="{{ k }}" {{ 'selected' if orc.status == k }}>{{ v }}</option>{% endfor %}</select>
+        <button class="btn">Alterar</button>
+      </form>
+    </section>
+    {% if orc.observacoes %}
+    <section class="painel"><h2>Observações</h2><p style="white-space:pre-line">{{ orc.observacoes }}</p></section>
+    {% endif %}
+    {% if not embarque %}
+    <form method="post" action="{{ url_for('orcamentos.excluir', orc_id=orc.id) }}" onsubmit="return confirm('Excluir este orçamento?')" style="margin-top:16px">
+      <button class="btn-link perigo">{{ icon('lixo', 16) }} Excluir orçamento</button>
+    </form>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon, badge %}
+{% block titulo %}Embarques{% endblock %}
+{% block conteudo %}
+<div class="cab">
+  <div><h1>Embarques</h1><p>Controle de todos os embarques de importação e exportação</p></div>
+  <div class="acoes"><a class="btn primario" href="{{ url_for('embarques.form') }}">{{ icon('mais', 18) }} Novo embarque</a></div>
+</div>
+<form class="barra" method="get">
+  <div class="busca">{{ icon('busca', 20) }}<input name="q" value="{{ busca }}" placeholder="Referência, cliente, BL/AWB, booking ou contêiner"></div>
+  <input type="hidden" name="status" value="{{ status }}">
+  <button class="btn so-icone" aria-label="Filtrar">{{ icon('filtro', 20) }}</button>
+</form>
+<div class="barra filtros">
+  <a href="{{ url_for('embarques.lista', q=busca) }}" class="{{ 'ativo' if not status }}">Todos</a>
+  <a href="{{ url_for('embarques.lista', status='ativos', q=busca) }}" class="{{ 'ativo' if status == 'ativos' }}">Ativos</a>
+  {% for k, v in LABELS.status_embarque.items() %}
+    <a href="{{ url_for('embarques.lista', status=k, q=busca) }}" class="{{ 'ativo' if status == k }}">{{ v }}</a>
+  {% endfor %}
+</div>
+<div class="tabela-wrap">
+  <table>
+    <thead><tr><th>Código</th><th>Cliente</th><th>Status</th><th>Modalidade</th><th>Rota</th><th>ETD</th><th>ETA</th><th>BL / AWB</th></tr></thead>
+    <tbody>
+      {% for e in embarques %}
+        <tr data-href="{{ url_for('embarques.detalhe', emb_id=e.id) }}">
+          <td class="mono nowrap">{{ e.referencia }}</td>
+          <td>{{ e.cliente }}</td>
+          <td>{{ badge(e.status, 'status_embarque') }}</td>
+          <td>{{ e.modal|label('modal') }}<div class="muted">{{ e.tipo_operacao|label('operacao') }}</div></td>
+          <td>{{ e.origem }} → {{ e.destino }}</td>
+          <td class="nowrap tnum">{{ e.atd|data if e.atd else e.etd|data }}</td>
+          <td class="nowrap tnum" {% if e.eta and e.eta < hoje and not e.ata and e.status not in ('entregue','cancelado') %}style="color:var(--red)" title="ETA vencido"{% endif %}>{{ e.ata|data if e.ata else e.eta|data }}</td>
+          <td class="mono">{{ e.house or e.master or e.booking or '—' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="vazio">Nenhum embarque encontrado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

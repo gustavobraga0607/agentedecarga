@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon %}
+{% block titulo %}Emitir NF-S{% endblock %}
+{% block conteudo %}
+<a class="trilha" href="{{ url_for('nfse.lista') }}">{{ icon('voltar', 16) }} Notas fiscais</a>
+<div class="cab"><div><h1>Emitir NF-S</h1><p>Próximo número: <strong>{{ empresa.proximo_numero_nfse }}</strong> · Série {{ empresa.serie_rps }}</p></div></div>
+{% if not empresa.cnpj or not empresa.inscricao_municipal %}
+  <div class="aviso" style="margin-bottom:18px">{{ icon('alerta', 18) }}<div>CNPJ e inscrição municipal do prestador ainda não foram configurados. <a href="{{ url_for('principal.empresa') }}">Configurar agora</a>.</div></div>
+{% endif %}
+<form method="post">
+  <div class="grade-lateral">
+    <div>
+      <section class="painel">
+        <p class="secao">Tomador e serviço</p>
+        <div class="campos">
+          <div class="c8"><label for="cliente_id">Tomador *</label>
+            <select id="cliente_id" name="cliente_id" required><option value="">Selecione…</option>
+              {% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if nota.cliente_id|string == c.id|string }}>{{ c.nome }}{% if c.cnpj_cpf %} — {{ c.cnpj_cpf }}{% endif %}</option>{% endfor %}
+            </select></div>
+          <div class="c4"><label for="embarque_id">Embarque vinculado</label>
+            <select id="embarque_id" name="embarque_id"><option value="">—</option>
+              {% for e in embarques %}<option value="{{ e.id }}" {{ 'selected' if nota.embarque_id|string == e.id|string }}>{{ e.referencia }} · {{ e.cliente }}</option>{% endfor %}
+            </select></div>
+          <div class="c3"><label for="codigo_servico">Item LC 116/03</label><input id="codigo_servico" name="codigo_servico" value="{{ nota.codigo_servico or '' }}"></div>
+          <div class="c3"><label for="competencia">Competência</label><input id="competencia" type="date" name="competencia" value="{{ nota.competencia or '' }}"></div>
+          <div class="c12"><label for="discriminacao">Discriminação dos serviços *</label><textarea id="discriminacao" name="discriminacao" rows="5" required>{{ nota.discriminacao or '' }}</textarea></div>
+        </div>
+      </section>
+      <section class="painel">
+        <p class="secao">Valores e tributos</p>
+        <div class="campos">
+          <div class="c3"><label for="valor_servicos">Valor dos serviços (R$) *</label><input id="valor_servicos" name="valor_servicos" type="number" step="0.01" min="0.01" value="{{ nota.valor_servicos or '' }}" required></div>
+          <div class="c3"><label for="deducoes">Deduções (R$)</label><input id="deducoes" name="deducoes" type="number" step="0.01" value="{{ nota.deducoes or 0 }}"></div>
+          <div class="c3"><label for="aliquota_iss">Alíquota ISS (%)</label><input id="aliquota_iss" name="aliquota_iss" type="number" step="0.01" value="{{ nota.aliquota_iss or 0 }}"></div>
+          <div class="c3"><label for="inss_pct">Retenção INSS (%)</label><input id="inss_pct" name="inss_pct" type="number" step="0.01" value="{{ nota.inss_pct or 0 }}"></div>
+          <div class="c6"><label class="check"><input type="checkbox" name="iss_retido" {{ 'checked' if nota.iss_retido }}> ISS retido pelo tomador</label></div>
+          <div class="c6"><label class="check"><input type="checkbox" name="reter_federais" {{ 'checked' if nota.reter_federais }}> Reter PIS/COFINS/CSLL/IR (4,65% + 1,5%)</label></div>
+        </div>
+      </section>
+    </div>
+    <aside>
+      <section class="painel">
+        <h2>Resumo</h2>
+        <table class="compacta" style="margin-top:10px">
+          <tbody id="resumo"></tbody>
+        </table>
+        <button class="btn primario" style="width:100%;justify-content:center;margin-top:16px">{{ icon('recibo', 18) }} Emitir nota</button>
+        <p class="ajuda">A nota recebe número sequencial, código de verificação e XML de DPS. A transmissão à prefeitura depende da integração configurada — veja o README.</p>
+      </section>
+    </aside>
+  </div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+  var form = document.querySelector('form[method=post]');
+  function v(n) { return parseFloat(form.elements[n].value) || 0; }
+  function brl(x) { return x.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'}); }
+  function r2(x) { return Math.round(x * 100) / 100; }
+  function atualizar() {
+    var valor = v('valor_servicos'), base = Math.max(valor - v('deducoes'), 0);
+    var iss = r2(base * v('aliquota_iss') / 100);
+    var fed = form.elements.reter_federais.checked;
+    var linhas = [['Valor dos serviços', valor], ['Base de cálculo', base], ['ISS', iss]];
+    var ret = 0;
+    if (fed) {
+      [['PIS', .65], ['COFINS', 3], ['CSLL', 1], ['IR', 1.5]].forEach(function (t) {
+        var x = r2(valor * t[1] / 100); ret += x; linhas.push(['(−) ' + t[0], x]);
+      });
+    }
+    var inss = r2(valor * v('inss_pct') / 100);
+    if (inss) { ret += inss; linhas.push(['(−) INSS', inss]); }
+    if (form.elements.iss_retido.checked) { ret += iss; linhas.push(['(−) ISS retido', iss]); }
+    linhas.push(['Valor líquido', valor - ret]);
+    document.getElementById('resumo').innerHTML = linhas.map(function (l, i) {
+      var forte = i === linhas.length - 1 ? ' style="font-weight:700"' : '';
+      return '<tr' + forte + '><td>' + l[0] + '</td><td class="right tnum">' + brl(l[1]) + '</td></tr>';
+    }).join('');
+  }
+  form.addEventListener('input', atualizar);
+  form.addEventListener('change', atualizar);
+  atualizar();
+</script>
+{% endblock %}

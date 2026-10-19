@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon %}
+{% block titulo %}Configurações{% endblock %}
+{% block conteudo %}
+{% set e = empresa %}
+<div class="cab"><div><h1>Configurações</h1><p>Dados do prestador usados em propostas e NF-S</p></div></div>
+<form method="post">
+  <section class="painel">
+    <p class="secao">Empresa</p>
+    <div class="campos">
+      <div class="c6"><label for="razao_social">Razão social</label><input id="razao_social" name="razao_social" value="{{ e.razao_social }}" required></div>
+      <div class="c6"><label for="nome_fantasia">Nome fantasia</label><input id="nome_fantasia" name="nome_fantasia" value="{{ e.nome_fantasia }}"></div>
+      <div class="c3"><label for="cnpj">CNPJ</label><input id="cnpj" name="cnpj" value="{{ e.cnpj }}"></div>
+      <div class="c3"><label for="inscricao_municipal">Inscrição municipal</label><input id="inscricao_municipal" name="inscricao_municipal" value="{{ e.inscricao_municipal }}"></div>
+      <div class="c3"><label for="email">E-mail</label><input id="email" name="email" value="{{ e.email }}"></div>
+      <div class="c3"><label for="telefone">Telefone</label><input id="telefone" name="telefone" value="{{ e.telefone }}"></div>
+      <div class="c6"><label for="endereco">Endereço</label><input id="endereco" name="endereco" value="{{ e.endereco }}"></div>
+      <div class="c3"><label for="municipio">Município</label><input id="municipio" name="municipio" value="{{ e.municipio }}"></div>
+      <div class="c2"><label for="uf">UF</label><input id="uf" name="uf" maxlength="2" value="{{ e.uf }}"></div>
+      <div class="c4"><label for="codigo_municipio_ibge">Código IBGE do município</label><input id="codigo_municipio_ibge" name="codigo_municipio_ibge" value="{{ e.codigo_municipio_ibge }}"></div>
+    </div>
+  </section>
+  <section class="painel">
+    <p class="secao">Fiscal (NF-S)</p>
+    <div class="campos">
+      <div class="c4"><label for="regime_tributario">Regime tributário</label>
+        <select id="regime_tributario" name="regime_tributario">
+          {% for k, v in [('simples_nacional','Simples Nacional'),('lucro_presumido','Lucro Presumido'),('lucro_real','Lucro Real')] %}
+            <option value="{{ k }}" {{ 'selected' if e.regime_tributario == k }}>{{ v }}</option>
+          {% endfor %}
+        </select></div>
+      <div class="c2"><label for="codigo_servico">Item LC 116/03</label><input id="codigo_servico" name="codigo_servico" value="{{ e.codigo_servico }}"></div>
+      <div class="c6"><label for="descricao_servico">Descrição padrão do serviço</label><input id="descricao_servico" name="descricao_servico" value="{{ e.descricao_servico }}"></div>
+      <div class="c2"><label for="aliquota_iss">Alíquota ISS (%)</label><input id="aliquota_iss" name="aliquota_iss" type="number" step="0.01" value="{{ e.aliquota_iss }}"></div>
+      <div class="c2"><label for="serie_rps">Série RPS/DPS</label><input id="serie_rps" name="serie_rps" value="{{ e.serie_rps }}"></div>
+      <div class="c2"><label for="proximo_numero_nfse">Próximo nº NF-S</label><input id="proximo_numero_nfse" name="proximo_numero_nfse" type="number" min="1" value="{{ e.proximo_numero_nfse }}"></div>
+    </div>
+  </section>
+  <section class="painel">
+    <p class="secao">Câmbio padrão para novos orçamentos</p>
+    <div class="campos">
+      <div class="c3"><label for="taxa_usd">USD → BRL</label><input id="taxa_usd" name="taxa_usd" type="number" step="0.0001" value="{{ e.taxa_usd }}"></div>
+      <div class="c3"><label for="taxa_eur">EUR → BRL</label><input id="taxa_eur" name="taxa_eur" type="number" step="0.0001" value="{{ e.taxa_eur }}"></div>
+    </div>
+  </section>
+  <div class="form-acoes"><button class="btn primario">Salvar configurações</button></div>
+</form>
+{% endblock %}

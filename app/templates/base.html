@@ -1,0 +1,78 @@
+{% from "_icones.html" import icon %}<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}{% endblock %} · Agente de Cargas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script>
+    try { var t = localStorage.getItem('tema'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+{% set secao = request.blueprint %}
+{% set nome_empresa = empresa.nome_fantasia or empresa.razao_social %}
+<header class="topo-mobile">
+  <button class="icone-btn" type="button" onclick="document.querySelector('.rail').classList.toggle('aberto')" aria-label="Abrir menu">{{ icon('menu') }}</button>
+  <strong>{{ nome_empresa }}</strong>
+</header>
+<aside class="rail" id="menu">
+  <div class="rail-topo">
+    <div class="avatar">{{ nome_empresa[:1]|upper }}</div>
+    <div class="rotulo rail-empresa">
+      <strong>{{ nome_empresa }}</strong>
+      <small>{{ empresa.cnpj or 'Agente de cargas internacionais' }}</small>
+    </div>
+  </div>
+  <nav>
+    {% for bp, endpoint, ic, nome in [
+      ('principal', 'principal.dashboard', 'painel', 'Painel'),
+      ('orcamentos', 'orcamentos.lista', 'calculadora', 'Orçamentos'),
+      ('embarques', 'embarques.lista', 'navio', 'Embarques'),
+      ('nfse', 'nfse.lista', 'recibo', 'Notas Fiscais (NF-S)'),
+      ('clientes', 'clientes.lista', 'usuarios', 'Clientes'),
+    ] %}
+      <a href="{{ url_for(endpoint) }}" class="{{ 'ativo' if secao == bp and request.endpoint != 'principal.empresa' }}" title="{{ nome }}">
+        {{ icon(ic, 22) }}<span class="rotulo">{{ nome }}</span>
+      </a>
+    {% endfor %}
+    <a href="{{ url_for('principal.empresa') }}" class="{{ 'ativo' if request.endpoint == 'principal.empresa' }}" title="Configurações">
+      {{ icon('config', 22) }}<span class="rotulo">Configurações</span>
+    </a>
+  </nav>
+  <div class="rail-toggles">
+    <button class="icone-btn" type="button" id="tema" aria-label="Alternar tema claro/escuro">{{ icon('lua') }}</button>
+  </div>
+</aside>
+<main>
+  <div class="conteudo">
+    {% for cat, msg in get_flashed_messages(with_categories=true) %}
+      <div class="flash {{ cat }}">{{ icon('ok' if cat == 'ok' else 'alerta', 18) }}{{ msg }}</div>
+    {% endfor %}
+    {% block conteudo %}{% endblock %}
+  </div>
+</main>
+<script>
+  document.getElementById('tema').addEventListener('click', function () {
+    var root = document.documentElement;
+    var escuro = root.dataset.theme ? root.dataset.theme === 'dark'
+      : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = escuro ? 'light' : 'dark';
+    try { localStorage.setItem('tema', root.dataset.theme); } catch (e) {}
+  });
+  document.querySelectorAll('tr[data-href]').forEach(function (tr) {
+    tr.classList.add('clicavel');
+    tr.addEventListener('click', function (ev) {
+      if (!ev.target.closest('a, button, form')) location.href = tr.dataset.href;
+    });
+  });
+  document.addEventListener('click', function (ev) {
+    var menu = document.querySelector('.rail');
+    if (menu.classList.contains('aberto') && !ev.target.closest('.rail, .topo-mobile')) menu.classList.remove('aberto');
+  });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

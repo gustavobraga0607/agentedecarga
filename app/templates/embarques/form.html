@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon %}
+{% block titulo %}{{ 'Editar' if emb.referencia else 'Novo' }} embarque{% endblock %}
+{% block conteudo %}
+<a class="trilha" href="{{ url_for('embarques.lista') }}">{{ icon('voltar', 16) }} Embarques</a>
+<div class="cab"><div><h1>{{ emb.referencia or 'Novo embarque' }}</h1>
+  {% if emb.orcamento_id and not emb.referencia %}<p>A partir do orçamento selecionado — revise os dados</p>{% endif %}</div></div>
+{% macro sel(nome, opcoes, atual) -%}
+<select id="{{ nome }}" name="{{ nome }}">{% for k, v in opcoes.items() %}<option value="{{ k }}" {{ 'selected' if atual == k }}>{{ v }}</option>{% endfor %}</select>
+{%- endmacro %}
+{% macro campo(nome, rotulo, classe='c3', tipo='text', step=None) -%}
+<div class="{{ classe }}"><label for="{{ nome }}">{{ rotulo }}</label><input id="{{ nome }}" name="{{ nome }}" type="{{ tipo }}" {% if step %}step="{{ step }}"{% endif %} value="{{ emb[nome] if emb[nome] is not none else '' }}"></div>
+{%- endmacro %}
+<form method="post">
+  {% if emb.orcamento_id %}<input type="hidden" name="orcamento_id" value="{{ emb.orcamento_id }}">{% endif %}
+  <section class="painel">
+    <p class="secao">Operação</p>
+    <div class="campos">
+      <div class="c6"><label for="cliente_id">Cliente *</label>
+        <select id="cliente_id" name="cliente_id" required><option value="">Selecione…</option>
+          {% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if emb.cliente_id|string == c.id|string }}>{{ c.nome }}</option>{% endfor %}
+        </select></div>
+      <div class="c3"><label for="tipo_operacao">Operação</label>{{ sel('tipo_operacao', OPERACOES, emb.tipo_operacao) }}</div>
+      <div class="c3"><label for="modal">Modalidade</label>{{ sel('modal', MODAIS, emb.modal) }}</div>
+      {{ campo('origem', 'Origem', 'c4') }}
+      {{ campo('destino', 'Destino', 'c4') }}
+      <div class="c2"><label for="incoterm">Incoterm</label><select id="incoterm" name="incoterm"><option value=""></option>{% for i in INCOTERMS %}<option {{ 'selected' if emb.incoterm == i }}>{{ i }}</option>{% endfor %}</select></div>
+      {{ campo('valor_servico_brl', 'Valor do serviço (R$)', 'c2', 'number', '0.01') }}
+      {{ campo('exportador', 'Exportador / Shipper', 'c6') }}
+      {{ campo('importador', 'Importador / Consignee', 'c6') }}
+    </div>
+  </section>
+  <section class="painel">
+    <p class="secao">Carga</p>
+    <div class="campos">
+      {{ campo('mercadoria', 'Mercadoria', 'c6') }}
+      {{ campo('volumes', 'Volumes', 'c2', 'number', '1') }}
+      {{ campo('peso_kg', 'Peso bruto (kg)', 'c2', 'number', '0.01') }}
+      {{ campo('cubagem', 'Cubagem (m³)', 'c2', 'number', '0.001') }}
+    </div>
+  </section>
+  <section class="painel">
+    <p class="secao">Transporte e documentos</p>
+    <div class="campos">
+      {{ campo('transportador', 'Armador / Cia aérea / Transportadora', 'c4') }}
+      {{ campo('navio_voo', 'Navio-viagem / Voo / Placa', 'c4') }}
+      {{ campo('booking', 'Booking', 'c4') }}
+      {{ campo('master', 'MBL / MAWB', 'c4') }}
+      {{ campo('house', 'HBL / HAWB / CRT', 'c4') }}
+      {{ campo('containers', 'Contêineres (separe por vírgula)', 'c4') }}
+      {{ campo('etd', 'ETD (previsto)', 'c3', 'date') }}
+      {{ campo('eta', 'ETA (previsto)', 'c3', 'date') }}
+      {{ campo('atd', 'Embarque efetivo', 'c3', 'date') }}
+      {{ campo('ata', 'Chegada efetiva', 'c3', 'date') }}
+      <div class="c12"><label for="observacoes">Observações internas</label><textarea id="observacoes" name="observacoes" rows="3">{{ emb.observacoes or '' }}</textarea></div>
+    </div>
+  </section>
+  <div class="form-acoes">
+    <a class="btn" href="{{ url_for('embarques.lista') }}">Cancelar</a>
+    <button class="btn primario">Salvar embarque</button>
+  </div>
+</form>
+{% endblock %}

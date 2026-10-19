@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_icones.html" import icon, badge %}
+{% block titulo %}Notas fiscais de serviço{% endblock %}
+{% block conteudo %}
+<div class="cab">
+  <div><h1>Notas fiscais (NF-S)</h1><p>Emissão e arquivo das notas de serviço de agenciamento</p></div>
+  <div class="acoes">
+    <a class="btn" href="{{ url_for('nfse.anexar') }}">{{ icon('clipe', 18) }} Anexar NF-S</a>
+    <a class="btn primario" href="{{ url_for('nfse.emitir') }}">{{ icon('mais', 18) }} Emitir NF-S</a>
+  </div>
+</div>
+<form class="barra" method="get">
+  <div><label for="mes">Competência</label><input id="mes" type="month" name="mes" value="{{ mes }}" style="width:200px"></div>
+  <div><label for="status">Status</label>
+    <select id="status" name="status" style="width:180px"><option value="">Todos</option>
+      {% for k, v in LABELS.status_nfse.items() %}<option value="{{ k }}" {{ 'selected' if status == k }}>{{ v }}</option>{% endfor %}</select></div>
+  <div style="align-self:end"><button class="btn so-icone" aria-label="Filtrar">{{ icon('filtro', 20) }}</button></div>
+  {% if mes or status %}<div style="align-self:end"><a class="btn" href="{{ url_for('nfse.lista') }}">Limpar</a></div>{% endif %}
+</form>
+<div class="tabela-wrap">
+  <table>
+    <thead><tr><th>Número</th><th>Tomador</th><th>Status</th><th>Origem</th><th>Emissão</th><th>Embarque</th><th class="right">Valor</th><th class="right">ISS</th><th>Arquivos</th></tr></thead>
+    <tbody>
+      {% for n in notas %}
+        <tr data-href="{{ url_for('nfse.detalhe', nota_id=n.id) }}">
+          <td class="mono">{{ n.numero }}</td>
+          <td>{{ n.cliente }}</td>
+          <td>{{ badge(n.status, 'status_nfse') }}</td>
+          <td><span class="badge b-{{ n.origem }}">{{ 'Sistema' if n.origem == 'interna' else 'Anexada' }}</span></td>
+          <td class="nowrap tnum">{{ n.data_emissao|data }}</td>
+          <td class="mono">{{ n.embarque_ref or '—' }}</td>
+          <td class="right tnum nowrap">{{ n.valor_servicos|brl }}</td>
+          <td class="right tnum nowrap">{{ n.valor_iss|brl }}</td>
+          <td class="nowrap">
+            {% if n.arquivo_pdf %}<a href="{{ url_arquivo(n.arquivo_pdf) }}" target="_blank">PDF</a>{% endif %}
+            {% if n.arquivo_xml %}<a href="{{ url_arquivo(n.arquivo_xml) }}" target="_blank">XML</a>{% endif %}
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="9" class="vazio">Nenhuma nota encontrada.</td></tr>
+      {% endfor %}
+    </tbody>
+    {% if notas %}<tfoot><tr><td colspan="6">Total emitido (exclui canceladas)</td><td class="right tnum nowrap">{{ total|brl }}</td><td colspan="2"></td></tr></tfoot>{% endif %}
+  </table>
+</div>
+{% endblock %}
