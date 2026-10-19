@@ -48,6 +48,9 @@
 </aside>
 <main>
   <div class="conteudo">
+    {% if dados_temporarios %}
+      <div class="aviso" style="margin-bottom:18px">{{ icon('alerta', 18) }}<div><strong>Modo demonstração:</strong> nesta hospedagem os dados e anexos são temporários e podem ser apagados a qualquer momento.</div></div>
+    {% endif %}
     {% for cat, msg in get_flashed_messages(with_categories=true) %}
       <div class="flash {{ cat }}">{{ icon('ok' if cat == 'ok' else 'alerta', 18) }}{{ msg }}</div>
     {% endfor %}

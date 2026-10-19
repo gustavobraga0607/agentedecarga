@@ -60,3 +60,9 @@ tests/
 ```
 
 Os dados e os anexos ficam em `instance/`, que não vai para o git.
+
+## Publicar na Vercel
+
+O projeto já vem configurado (`vercel.json` e `api/index.py`). Para publicar, importe o repositório em <https://vercel.com/new>, sem alterar nenhuma configuração. Outra opção é rodar `npx vercel --prod` na pasta do projeto.
+
+**Limitação:** as funções da Vercel não têm disco permanente. Lá o banco e os anexos ficam em `/tmp` e são apagados quando a função reinicia, e o sistema mostra um aviso de "modo demonstração". Para usar em produção, o banco precisa migrar para Postgres (Neon ou Supabase) e os anexos para o Vercel Blob. Outra saída é hospedar em um serviço com disco persistente, como Railway, Render ou Fly.io.
