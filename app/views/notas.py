@@ -66,9 +66,11 @@ def emitir():
             bool(request.form.get("reter_federais")), num("inss_pct"),
         )
         db = get_db()
-        # numeração sequencial: lê e incrementa na mesma transação
-        numero = db.execute("SELECT proximo_numero_nfse FROM empresa WHERE id=1").fetchone()[0]
-        db.execute("UPDATE empresa SET proximo_numero_nfse=? WHERE id=1", (numero + 1,))
+        # numeração sequencial: incrementa e lê no mesmo comando (seguro com acessos simultâneos)
+        numero = db.execute(
+            "UPDATE empresa SET proximo_numero_nfse = proximo_numero_nfse + 1 WHERE id=1 "
+            "RETURNING proximo_numero_nfse - 1 AS numero"
+        ).fetchone()["numero"]
         nota = {
             "origem": "interna",
             "numero": str(numero),
@@ -92,7 +94,7 @@ def emitir():
         nota["arquivo_xml_nome"] = f"NFSe_{numero}.xml"
         cols = ", ".join(nota)
         marks = ", ".join("?" for _ in nota)
-        nota_id = db.execute(f"INSERT INTO nfse ({cols}) VALUES ({marks})", list(nota.values())).lastrowid
+        nota_id = db.inserir(f"INSERT INTO nfse ({cols}) VALUES ({marks})", list(nota.values()))
         db.commit()
         retorno = fiscal.transmitir(xml)
         flash(f"NF-S nº {numero} emitida. {retorno['mensagem']}", "ok")
@@ -226,9 +228,4 @@ def cancelar(nota_id):
         execute("UPDATE nfse SET status='cancelada', motivo_cancelamento=? WHERE id=?", (motivo, nota_id))
         flash(f"NF-S nº {nota['numero']} cancelada.", "ok")
     return redirect(url_for("nfse.detalhe", nota_id=nota_id))
-
-
-@bp.app_template_global()
-def url_arquivo(nome):
-    return url_for("arquivo", nome=nome) if nome else None
 

@@ -67,7 +67,7 @@ def test_fluxo_orcamento_embarque_nfse(app, client, cliente_id):
     assert nota["numero"] == "1" and nota["valor_iss"] == 30 and nota["arquivo_xml"]
     assert client.get(f"/nfse/{nota['id']}").status_code == 200
     assert client.get(f"/nfse/{nota['id']}/imprimir").status_code == 200
-    xml = client.get(f"/arquivos/{nota['arquivo_xml']}")
+    xml = client.get("/arquivos", query_string={"ref": nota["arquivo_xml"]})
     assert b"<vServ>600.00</vServ>" in xml.data
 
     client.post(f"/nfse/{nota['id']}/cancelar", data={"motivo": "curto"})
@@ -97,4 +97,29 @@ def test_anexar_nfse_por_xml_identifica_tomador(app, client, cliente_id):
 
 
 def test_arquivo_bloqueia_path_traversal(client):
-    assert client.get("/arquivos/..%2Fsegredo").status_code == 404
+    assert client.get("/arquivos", query_string={"ref": "../segredo"}).status_code == 404
+    assert client.get("/arquivos", query_string={"ref": "/etc/passwd"}).status_code == 404
+
+
+def test_login_exigido_quando_ha_senha(app, client):
+    app.config["APP_PASSWORD"] = "segredo123"
+    r = client.get("/embarques/")
+    assert r.status_code == 302 and "/login" in r.headers["Location"]
+    assert client.post("/login", data={"senha": "errada"}).status_code == 200
+    r = client.post("/login?proximo=/embarques/", data={"senha": "segredo123"})
+    assert r.headers["Location"] == "/embarques/"
+    assert client.get("/embarques/").status_code == 200
+    client.post("/sair")
+    assert client.get("/embarques/").status_code == 302
+
+
+def test_login_nao_redireciona_para_outro_site(app, client):
+    app.config["APP_PASSWORD"] = "segredo123"
+    r = client.post("/login?proximo=//evil.example", data={"senha": "segredo123"})
+    assert r.headers["Location"] == "/"
+
+
+def test_publicado_sem_senha_fica_bloqueado(app, client):
+    app.config["EXIGIR_SENHA"] = True
+    r = client.get("/")
+    assert r.status_code == 503 and b"APP_PASSWORD" in r.data

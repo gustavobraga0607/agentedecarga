@@ -125,7 +125,7 @@ def salvar(orc_id, orc, volumes, itens):
         dados["numero"] = proximo_codigo("orcamentos", "numero", "ORC")
         cols = ", ".join(dados)
         marks = ", ".join("?" for _ in dados)
-        orc_id = db.execute(f"INSERT INTO orcamentos ({cols}) VALUES ({marks})", list(dados.values())).lastrowid
+        orc_id = db.inserir(f"INSERT INTO orcamentos ({cols}) VALUES ({marks})", list(dados.values()))
     for v in volumes:
         db.execute(
             """INSERT INTO orcamento_volumes (orcamento_id, quantidade, comprimento_cm, largura_cm, altura_cm, peso_kg)

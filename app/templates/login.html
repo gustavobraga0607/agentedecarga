@@ -1,0 +1,13 @@
+{% extends "_simples.html" %}
+{% block titulo %}Entrar{% endblock %}
+{% block conteudo %}
+<div class="avatar" style="width:52px;height:52px;margin:0 auto 16px">{{ icon('cadeado', 24) }}</div>
+<h1 style="font-size:24px;text-align:center">{{ empresa.nome_fantasia or empresa.razao_social }}</h1>
+<p class="muted" style="text-align:center;margin:6px 0 24px">Acesso restrito</p>
+{% if erro %}<div class="flash erro">{{ icon('alerta', 18) }}{{ erro }}</div>{% endif %}
+<form method="post">
+  <label for="senha">Senha</label>
+  <input id="senha" type="password" name="senha" autocomplete="current-password" autofocus required>
+  <button class="btn primario" style="width:100%;justify-content:center;margin-top:16px">Entrar</button>
+</form>
+{% endblock %}

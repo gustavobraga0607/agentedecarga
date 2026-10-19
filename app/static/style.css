@@ -292,3 +292,8 @@ details.acao[open] summary { margin-bottom: 12px; }
   .barra-impressao { display: none; }
   .folha { box-shadow: none; margin: 0; padding: 0; max-width: none; }
 }
+
+/* ------------------------------------------------------------ login */
+body.centralizada { min-height: 100vh; display: grid; place-items: center; padding: 16px; }
+.caixa-entrada { width: 100%; max-width: 420px; padding: 36px 32px; }
+.caixa-entrada code { background: var(--gray-soft); padding: 1px 6px; border-radius: 4px; }

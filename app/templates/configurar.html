@@ -1,0 +1,8 @@
+{% extends "_simples.html" %}
+{% block titulo %}Configuração pendente{% endblock %}
+{% block conteudo %}
+<div class="avatar" style="width:52px;height:52px;margin:0 auto 16px">{{ icon('cadeado', 24) }}</div>
+<h1 style="font-size:22px;text-align:center">Defina uma senha de acesso</h1>
+<p style="margin:16px 0 0">O sistema está publicado, mas fica bloqueado até existir uma senha. No painel da Vercel, abra
+<strong>Settings → Environment Variables</strong>, crie a variável <code>APP_PASSWORD</code> com a senha desejada e faça um novo deploy (<strong>Deployments → Redeploy</strong>).</p>
+{% endblock %}

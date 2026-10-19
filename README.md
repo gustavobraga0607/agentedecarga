@@ -63,6 +63,24 @@ Os dados e os anexos ficam em `instance/`, que não vai para o git.
 
 ## Publicar na Vercel
 
-O projeto já vem configurado (`vercel.json` e `api/index.py`). Para publicar, importe o repositório em <https://vercel.com/new>, sem alterar nenhuma configuração. Outra opção é rodar `npx vercel --prod` na pasta do projeto.
+O projeto já está configurado para a Vercel (`vercel.json` e `api/index.py`).
 
-**Limitação:** as funções da Vercel não têm disco permanente. Lá o banco e os anexos ficam em `/tmp` e são apagados quando a função reinicia, e o sistema mostra um aviso de "modo demonstração". Para usar em produção, o banco precisa migrar para Postgres (Neon ou Supabase) e os anexos para o Vercel Blob. Outra saída é hospedar em um serviço com disco persistente, como Railway, Render ou Fly.io.
+1. Em <https://vercel.com/new>, importe o repositório `agentedecarga` e clique em **Deploy** sem alterar nada.
+2. No projeto, abra **Storage** e conecte:
+   - **Neon (Postgres)**, que cria a variável `DATABASE_URL`;
+   - **Blob**, que cria a variável `BLOB_READ_WRITE_TOKEN`.
+3. Em **Settings → Environment Variables**, crie `APP_PASSWORD` com a senha de acesso ao sistema.
+4. Em **Deployments**, clique em **Redeploy**.
+
+As tabelas são criadas automaticamente no primeiro acesso. Sem `APP_PASSWORD`, o site publicado fica bloqueado e mostra essas instruções. Sem o Postgres e o Blob, ele funciona em "modo demonstração", com dados temporários.
+
+| Variável | Para quê |
+|---|---|
+| `APP_PASSWORD` | senha de acesso (obrigatória na Vercel) |
+| `DATABASE_URL` ou `POSTGRES_URL` | banco Postgres; sem ela, usa SQLite local |
+| `BLOB_READ_WRITE_TOKEN` | anexos no Vercel Blob; sem ela, usa a pasta `instance/uploads` |
+| `SECRET_KEY` | opcional; quando ausente, é derivada da senha |
+
+Os anexos ficam em blobs privados, sempre que a loja Blob permitir, e são entregues pela própria aplicação, só para quem fez login. Cada arquivo pode ter até 4 MB, que é o limite das funções da Vercel.
+
+Para rodar os testes também no Postgres, use `TEST_DATABASE_URL=postgresql://... .venv/bin/python -m pytest`.

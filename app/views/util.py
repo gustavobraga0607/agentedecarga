@@ -1,8 +1,7 @@
-import uuid
-from pathlib import Path
-
-from flask import current_app, request
+from flask import request
 from werkzeug.utils import secure_filename
+
+from .. import storage
 
 EXTENSOES_PERMITIDAS = {"pdf", "xml", "jpg", "jpeg", "png", "doc", "docx", "xls", "xlsx", "txt", "zip"}
 
@@ -38,7 +37,7 @@ def extensao(nome):
 
 
 def salvar_upload(arquivo):
-    """Salva um arquivo enviado e retorna (nome_armazenado, nome_original).
+    """Salva um arquivo enviado e retorna (referência, nome_original).
 
     Retorna None quando não há arquivo ou a extensão não é permitida.
     """
@@ -47,17 +46,13 @@ def salvar_upload(arquivo):
     ext = extensao(arquivo.filename)
     if ext not in EXTENSOES_PERMITIDAS:
         return None
-    nome = f"{uuid.uuid4().hex}.{ext}"
-    arquivo.save(Path(current_app.config["UPLOAD_FOLDER"]) / nome)
-    return nome, secure_filename(arquivo.filename) or nome
+    ref = storage.salvar(arquivo.read(), ext)
+    return ref, secure_filename(arquivo.filename) or f"arquivo.{ext}"
 
 
 def salvar_bytes(conteudo, ext):
-    nome = f"{uuid.uuid4().hex}.{ext}"
-    (Path(current_app.config["UPLOAD_FOLDER"]) / nome).write_bytes(conteudo)
-    return nome
+    return storage.salvar(conteudo, ext)
 
 
-def remover_upload(nome):
-    if nome:
-        (Path(current_app.config["UPLOAD_FOLDER"]) / nome).unlink(missing_ok=True)
+def remover_upload(ref):
+    storage.remover(ref)

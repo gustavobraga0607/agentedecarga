@@ -1,8 +1,6 @@
-import sqlite3
-
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
-from ..db import execute, query
+from ..db import IntegrityError, execute, query
 from .util import txt
 
 bp = Blueprint("clientes", __name__, url_prefix="/clientes")
@@ -62,6 +60,6 @@ def excluir(cliente_id):
     try:
         execute("DELETE FROM clientes WHERE id=?", (cliente_id,))
         flash("Cliente excluído.", "ok")
-    except sqlite3.IntegrityError:
+    except IntegrityError:
         flash("Cliente possui orçamentos, embarques ou notas vinculados e não pode ser excluído.", "erro")
     return redirect(url_for("clientes.lista"))
