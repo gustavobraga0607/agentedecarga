@@ -181,3 +181,18 @@ def excluir_documento(emb_id, doc_id):
         execute("DELETE FROM embarque_documentos WHERE id=?", (doc_id,))
         flash("Documento removido.", "ok")
     return redirect(url_for("embarques.detalhe", emb_id=emb_id))
+
+
+@bp.route("/<int:emb_id>/excluir", methods=["POST"])
+def excluir(emb_id):
+    obter(emb_id)
+    if query("SELECT 1 FROM nfse WHERE embarque_id=?", (emb_id,), one=True):
+        flash("Embarque possui NF-S vinculada e não pode ser excluído.", "erro")
+        return redirect(url_for("embarques.detalhe", emb_id=emb_id))
+    for doc in query("SELECT arquivo FROM embarque_documentos WHERE embarque_id=?", (emb_id,)):
+        remover_upload(doc["arquivo"])
+    execute("DELETE FROM embarque_documentos WHERE embarque_id=?", (emb_id,))
+    execute("DELETE FROM embarque_eventos WHERE embarque_id=?", (emb_id,))
+    execute("DELETE FROM embarques WHERE id=?", (emb_id,))
+    flash("Embarque excluído.", "ok")
+    return redirect(url_for("embarques.lista"))

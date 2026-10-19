@@ -123,3 +123,13 @@ def test_publicado_sem_senha_fica_bloqueado(app, client):
     app.config["EXIGIR_SENHA"] = True
     r = client.get("/")
     assert r.status_code == 503 and b"APP_PASSWORD" in r.data
+
+
+def test_excluir_embarque_sem_nfse(app, client, cliente_id):
+    client.post("/embarques/novo", data={"cliente_id": cliente_id, "modal": "aereo"})
+    client.post("/embarques/1/documentos", data={"tipo": "bl", "arquivos": (io.BytesIO(b"x"), "a.pdf")},
+                content_type="multipart/form-data")
+    assert client.post("/embarques/1/excluir").status_code == 302
+    with app.app_context():
+        assert query("SELECT COUNT(*) c FROM embarques", one=True)["c"] == 0
+        assert query("SELECT COUNT(*) c FROM embarque_documentos", one=True)["c"] == 0

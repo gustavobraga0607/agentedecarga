@@ -93,6 +93,11 @@
         {% endfor %}
       </ul>
     </section>
+    {% if not notas %}
+    <form method="post" action="{{ url_for('embarques.excluir', emb_id=emb.id) }}" onsubmit="return confirm('Excluir este embarque, seus eventos e documentos?')" style="margin-top:16px">
+      <button class="btn-link perigo">{{ icon('lixo', 16) }} Excluir embarque</button>
+    </form>
+    {% endif %}
   </div>
 
   <aside>
